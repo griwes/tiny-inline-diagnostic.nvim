@@ -31,10 +31,12 @@ M.open_float = function(...)
     once = true,
     callback = function()
       diagnostic_float_active = false
-      if original_tiny_state then
-        tiny_diag.enable()
-      end
       vim.api.nvim_del_augroup_by_id(group)
+      vim.schedule(function()
+        if not diagnostic_float_active and original_tiny_state then
+          tiny_diag.enable()
+        end
+      end)
     end,
   })
 
