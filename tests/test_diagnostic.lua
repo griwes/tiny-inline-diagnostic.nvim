@@ -400,6 +400,7 @@ T["multiple_lsp_diagnostics"]["DiagnosticChanged preserves diagnostics from all 
     local tiny = require("tiny-inline-diagnostic")
     local cache = require("tiny-inline-diagnostic.cache")
     tiny.setup(create_test_opts())
+    vim.api.nvim_exec_autocmds("LspAttach", { buffer = buf, data = { client_id = 1 } })
 
     local ns1 = vim.api.nvim_create_namespace("lsp1")
     local ns2 = vim.api.nvim_create_namespace("lsp2")
@@ -431,6 +432,7 @@ T["multiple_lsp_diagnostics"]["updates from one LSP do not erase diagnostics fro
     local tiny = require("tiny-inline-diagnostic")
     local cache = require("tiny-inline-diagnostic.cache")
     tiny.setup(create_test_opts())
+    vim.api.nvim_exec_autocmds("LspAttach", { buffer = buf, data = { client_id = 1 } })
 
     local ns1 = vim.api.nvim_create_namespace("lsp_a")
     local ns2 = vim.api.nvim_create_namespace("lsp_b")
@@ -485,6 +487,7 @@ T["multiple_lsp_diagnostics"]["clearing one LSP namespace preserves others"] = f
     local tiny = require("tiny-inline-diagnostic")
     local cache = require("tiny-inline-diagnostic.cache")
     tiny.setup(create_test_opts())
+    vim.api.nvim_exec_autocmds("LspAttach", { buffer = buf, data = { client_id = 1 } })
 
     local ns1 = vim.api.nvim_create_namespace("lsp_x")
     local ns2 = vim.api.nvim_create_namespace("lsp_y")
@@ -540,6 +543,7 @@ T["multiple_lsp_diagnostics"]["rapid DiagnosticChanged events preserve all diagn
     local tiny = require("tiny-inline-diagnostic")
     local cache = require("tiny-inline-diagnostic.cache")
     tiny.setup(create_test_opts())
+    vim.api.nvim_exec_autocmds("LspAttach", { buffer = buf, data = { client_id = 1 } })
 
     local namespaces = {}
     for i = 1, 5 do
