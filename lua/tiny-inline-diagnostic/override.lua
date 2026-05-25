@@ -23,6 +23,8 @@ M.open_float = function(...)
     return
   end
 
+  diagnostic_float_active = true
+
   local group = vim.api.nvim_create_augroup("RestoreTinyDiag", { clear = true })
 
   vim.api.nvim_create_autocmd({ "BufDelete", "BufWinLeave" }, {
