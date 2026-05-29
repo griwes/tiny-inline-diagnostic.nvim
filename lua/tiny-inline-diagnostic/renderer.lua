@@ -119,6 +119,17 @@ function M.safe_render(opts, bufnr)
   M.render(opts, bufnr)
 end
 
+---@param bufnr number
+---@return number|nil
+local function resolve_render_win(bufnr)
+  local current_win = vim.api.nvim_get_current_win()
+  if vim.api.nvim_win_is_valid(current_win) and vim.api.nvim_win_get_buf(current_win) == bufnr then
+    return current_win
+  end
+  local wins = vim.fn.win_findbuf(bufnr)
+  return wins and wins[1] or nil
+end
+
 ---@param opts table
 ---@param bufnr number
 function M.render(opts, bufnr)
@@ -127,11 +138,19 @@ function M.render(opts, bufnr)
     return
   end
 
-  local cursor_line = vim.api.nvim_win_get_cursor(0)[1] - 1
-  extmarks.clear(bufnr)
+  local winid = resolve_render_win(bufnr)
+  if not winid then
+    extmarks.clear(bufnr)
+    return
+  end
 
-  local plan, diags_dims = build_render_plan(opts, bufnr, diagnostics, cursor_line)
-  apply_render_plan(opts, bufnr, plan, diags_dims, opts.options.virt_texts.priority)
+  vim.api.nvim_win_call(winid, function()
+    local cursor_line = vim.api.nvim_win_get_cursor(0)[1] - 1
+    extmarks.clear(bufnr)
+
+    local plan, diags_dims = build_render_plan(opts, bufnr, diagnostics, cursor_line)
+    apply_render_plan(opts, bufnr, plan, diags_dims, opts.options.virt_texts.priority)
+  end)
 end
 
 return M

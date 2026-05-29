@@ -182,6 +182,115 @@ T["render"]["handles invalid window"] = function()
   end)
 end
 
+T["window_resolution"] = MiniTest.new_set()
+
+-- Regression for #181: rendering must use the window that displays the buffer,
+-- not whatever window happens to be current. Opening another window (e.g.
+-- :OverseerOpen) used to reflow diagnostics to the new window's width.
+T["window_resolution"]["uses buffer window geometry not current window"] = function()
+  local saved_columns = vim.o.columns
+  vim.o.columns = 120
+
+  local long_message =
+    "this is a fairly long diagnostic message that should wrap differently in a narrow window"
+
+  H.with_win_buf({ "x", "line 2" }, { 1, 0 }, nil, function(buf, win)
+    local opts = create_test_opts()
+    opts.options.overflow = { mode = "wrap" }
+    opts.options.softwrap = 30
+    opts.options.multilines.enabled = true
+    opts.options.multilines.always_show = true
+    state.init(opts)
+
+    local ns = vim.api.nvim_create_namespace("test_win_resolution")
+    vim.diagnostic.set(ns, buf, {
+      {
+        lnum = 0,
+        col = 0,
+        message = long_message,
+        severity = vim.diagnostic.severity.ERROR,
+      },
+    })
+
+    local cache = require("tiny-inline-diagnostic.cache")
+    cache.update(opts, buf, vim.diagnostic.get(buf))
+
+    local diag_ns = vim.api.nvim_create_namespace("TinyInlineDiagnostic")
+    -- Layout signature per extmark: row / virt_lines count / virt_text chunk
+    -- count. Reflowing to a different width changes the row (need_to_be_under),
+    -- the number of wrapped virt_lines, and/or the chunk segmentation.
+    local function capture_layout()
+      local marks = vim.api.nvim_buf_get_extmarks(buf, diag_ns, 0, -1, { details = true })
+      local sig = {}
+      for _, mark in ipairs(marks) do
+        local d = mark[4] or {}
+        table.insert(
+          sig,
+          string.format(
+            "r%d/vl%d/c%d",
+            mark[2],
+            d.virt_lines and #d.virt_lines or 0,
+            d.virt_text and #d.virt_text or 0
+          )
+        )
+      end
+      table.sort(sig)
+      return sig
+    end
+
+    renderer.render(opts, buf)
+    local reference = capture_layout()
+    MiniTest.expect.equality(#reference > 0, true)
+
+    -- Focus a narrow floating window onto a different buffer, leaving buf's
+    -- window geometry untouched (models opening another window without
+    -- resizing the diagnostic window). The pre-fix code reads the float's
+    -- width; the fix reads buf's own window width.
+    local other_buf = H.make_buf({ "unrelated" })
+    local float_win = vim.api.nvim_open_win(other_buf, true, {
+      relative = "editor",
+      width = 20,
+      height = 3,
+      row = 1,
+      col = 1,
+    })
+
+    MiniTest.expect.equality(vim.api.nvim_get_current_buf() ~= buf, true)
+    MiniTest.expect.equality(vim.api.nvim_win_get_width(float_win) < vim.api.nvim_win_get_width(win), true)
+
+    renderer.render(opts, buf)
+    local from_other_window = capture_layout()
+
+    MiniTest.expect.equality(from_other_window, reference)
+
+    vim.api.nvim_win_close(float_win, true)
+    vim.api.nvim_buf_delete(other_buf, { force = true })
+  end)
+
+  vim.o.columns = saved_columns
+end
+
+T["window_resolution"]["clears extmarks when buffer is in no window"] = function()
+  local buf = H.make_buf({ "test line" })
+  local opts = create_test_opts()
+  state.init(opts)
+
+  local ns = vim.api.nvim_create_namespace("test_hidden_buf")
+  vim.diagnostic.set(ns, buf, {
+    { lnum = 0, col = 0, message = "error", severity = vim.diagnostic.severity.ERROR },
+  })
+  local cache = require("tiny-inline-diagnostic.cache")
+  cache.update(opts, buf, vim.diagnostic.get(buf))
+
+  renderer.render(opts, buf)
+
+  local diag_ns = vim.api.nvim_create_namespace("TinyInlineDiagnostic")
+  local marks = vim.api.nvim_buf_get_extmarks(buf, diag_ns, 0, -1, {})
+  MiniTest.expect.equality(#marks, 0)
+
+  vim.api.nvim_buf_delete(buf, { force = true })
+end
+
 T["single_diagnostic_clearing"] = MiniTest.new_set()
 
 T["single_diagnostic_clearing"]["clears when single diagnostic is removed"] = function()
