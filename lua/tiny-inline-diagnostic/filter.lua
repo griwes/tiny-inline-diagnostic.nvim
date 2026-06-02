@@ -43,7 +43,7 @@ function M.at_position(opts, diagnostics, line, col)
     if diag.col == diag.end_col and diag.col > 0 then
       return col == diag.col or col == diag.col - 1
     end
-    return col >= diag.col and col <= diag.end_col
+    return col >= diag.col and col < diag.end_col
   end, diagnostics)
 
   if opts.options.show_diags_only_under_cursor then

@@ -46,6 +46,17 @@ T["at_position"]["returns diagnostics under cursor position"] = function()
   MiniTest.expect.equality(result[1].col, 30)
 end
 
+T["at_position"]["treats diagnostic range end as exclusive"] = function()
+  local diagnostics = {
+    H.make_diagnostic({ lnum = 5, col = 10, end_col = 20 }),
+  }
+  local opts = { options = { show_diags_only_under_cursor = true } }
+
+  MiniTest.expect.equality(#filter.at_position(opts, diagnostics, 5, 10), 1)
+  MiniTest.expect.equality(#filter.at_position(opts, diagnostics, 5, 19), 1)
+  MiniTest.expect.equality(#filter.at_position(opts, diagnostics, 5, 20), 0)
+end
+
 T["at_position"]["returns line diagnostics when cursor not in range"] = function()
   local diagnostics = {
     H.make_diagnostic({ lnum = 5, col = 10, end_col = 20 }),
@@ -62,7 +73,8 @@ T["at_position"]["returns empty when show_diags_only_under_cursor enabled and cu
     H.make_diagnostic({ lnum = 5, col = 30, end_col = 40 }),
   }
 
-  local result = filter.at_position({ options = { show_diags_only_under_cursor = true } }, diagnostics, 5, 0)
+  local result =
+    filter.at_position({ options = { show_diags_only_under_cursor = true } }, diagnostics, 5, 0)
   MiniTest.expect.equality(#result, 0)
 end
 
@@ -71,7 +83,8 @@ T["at_position"]["matches whole line when diagnostic has no column info and show
     H.make_diagnostic({ lnum = 5, col = 0, end_col = 0 }),
   }
 
-  local result = filter.at_position({ options = { show_diags_only_under_cursor = true } }, diagnostics, 5, 12)
+  local result =
+    filter.at_position({ options = { show_diags_only_under_cursor = true } }, diagnostics, 5, 12)
   MiniTest.expect.equality(#result, 1)
   MiniTest.expect.equality(result[1].lnum, 5)
 end
