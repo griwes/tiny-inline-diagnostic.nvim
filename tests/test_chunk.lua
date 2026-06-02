@@ -304,6 +304,151 @@ T["get_chunks"]["returns chunk info for diagnostic"] = function()
   end)
 end
 
+T["get_chunks"]["keeps normal and multiline message spacing consistent"] = function()
+  H.with_win_buf({ "test line", "cursor line" }, { 2, 0 }, 80, function(buf)
+    local base_opts = {
+      options = {
+        overflow = { mode = "none" },
+        softwrap = 10,
+        break_line = { enabled = false },
+        show_source = { enabled = false },
+        show_code = false,
+      },
+    }
+    local normal_opts = H.make_opts(vim.tbl_deep_extend("force", base_opts, {
+      options = {
+        multilines = { enabled = false },
+      },
+    }))
+    local multiline_opts = H.make_opts(vim.tbl_deep_extend("force", base_opts, {
+      options = {
+        multilines = { enabled = true },
+      },
+    }))
+    local diags = {
+      { message = "test error", severity = vim.diagnostic.severity.ERROR, lnum = 0 },
+    }
+
+    local normal = chunk.get_chunks(normal_opts, diags, 1, 0, 1, buf)
+    local multiline = chunk.get_chunks(multiline_opts, diags, 1, 0, 1, buf)
+
+    local normal_header = chunk.get_header_from_chunk(
+      normal.chunks[1],
+      1,
+      normal,
+      normal_opts,
+      "DiagnosticError",
+      "DiagnosticErrorInv",
+      1,
+      normal.severities,
+      1
+    )
+    local multiline_header = chunk.get_header_from_chunk(
+      multiline.chunks[1],
+      1,
+      multiline,
+      multiline_opts,
+      "DiagnosticError",
+      "DiagnosticErrorInv",
+      1,
+      multiline.severities,
+      1
+    )
+
+    local function text(chunks)
+      return table.concat(
+        vim.tbl_map(function(item)
+          return item[1]
+        end, chunks),
+        ""
+      )
+    end
+
+    MiniTest.expect.equality(text(multiline_header), text(normal_header))
+  end)
+end
+
+T["get_chunks"]["keeps normal and multiline message spacing consistent for multiple diagnostics"] = function()
+  H.with_win_buf({ "test line", "cursor line" }, { 2, 0 }, 80, function(buf)
+    local base_opts = {
+      options = {
+        overflow = { mode = "none" },
+        softwrap = 10,
+        break_line = { enabled = false },
+        show_source = { enabled = false },
+        show_code = false,
+      },
+    }
+    local normal_opts = H.make_opts(vim.tbl_deep_extend("force", base_opts, {
+      options = {
+        multilines = { enabled = false },
+      },
+    }))
+    local multiline_opts = H.make_opts(vim.tbl_deep_extend("force", base_opts, {
+      options = {
+        multilines = { enabled = true },
+      },
+    }))
+    local diags = {
+      { message = "test error", severity = vim.diagnostic.severity.ERROR, lnum = 0 },
+      { message = "test warning", severity = vim.diagnostic.severity.WARN, lnum = 0 },
+    }
+
+    local function header_text(opts, ret, index_diag)
+      local header = chunk.get_header_from_chunk(
+        ret.chunks[1],
+        index_diag,
+        ret,
+        opts,
+        "DiagnosticError",
+        "DiagnosticErrorInv",
+        #diags,
+        ret.severities,
+        #diags
+      )
+
+      return table.concat(
+        vim.tbl_map(function(item)
+          return item[1]
+        end, header),
+        ""
+      )
+    end
+
+    for index_diag = 1, #diags do
+      local normal = chunk.get_chunks(normal_opts, diags, index_diag, 0, 1, buf)
+      local multiline = chunk.get_chunks(multiline_opts, diags, index_diag, 0, 1, buf)
+
+      MiniTest.expect.equality(
+        header_text(multiline_opts, multiline, index_diag),
+        header_text(normal_opts, normal, index_diag)
+      )
+    end
+  end)
+end
+
+T["get_chunks"]["does not trim leading whitespace from multiline diagnostic messages"] = function()
+  H.with_win_buf({ "test line", "cursor line" }, { 2, 0 }, 80, function(buf)
+    local opts = H.make_opts({
+      options = {
+        overflow = { mode = "none" },
+        multilines = { enabled = true },
+        softwrap = 10,
+        break_line = { enabled = false },
+        show_source = { enabled = false },
+        show_code = false,
+      },
+    })
+    local diags = {
+      { message = "  indented diagnostic", severity = vim.diagnostic.severity.ERROR, lnum = 0 },
+    }
+
+    local result = chunk.get_chunks(opts, diags, 1, 0, 1, buf)
+
+    MiniTest.expect.equality(result.chunks[1], "  indented diagnostic")
+  end)
+end
+
 T["get_chunks"]["includes source when show_source is enabled"] = function()
   H.with_buf({ "test line" }, function(buf)
     local opts = H.make_opts({

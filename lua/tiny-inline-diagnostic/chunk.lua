@@ -464,7 +464,7 @@ function M.get_chunks(opts, diags_on_line, diag_index, diag_line, cursor_line, b
       diag.is_related or false
     )
   else
-    chunks = { " " .. diag_message }
+    chunks = { diag_message }
   end
 
   return {
