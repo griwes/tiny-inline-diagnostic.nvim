@@ -191,6 +191,74 @@ T["get_diagnostic_highlights"]["current-line styling preserves NoBg signs"] = fu
   MiniTest.expect.equality(body_hi, "TinyInlineInvDiagnosticVirtualTextErrorNoBg")
 end
 
+T["get_diagnostic_highlights"]["can apply under-cursor diagnostic styling"] = function()
+  local diag_ret = { line = 10, severity = 1, under_cursor = true }
+  local curline = 10
+  local blend_factor = 0.5
+  local index_diag = 1
+
+  local diag_hi, diag_inv_hi, body_hi =
+    highlights.get_diagnostic_highlights(blend_factor, diag_ret, curline, index_diag, {
+      under_cursor = {
+        enabled = true,
+      },
+    })
+
+  MiniTest.expect.equality(diag_hi, "TinyInlineDiagnosticVirtualTextErrorUnderCursor")
+  MiniTest.expect.equality(diag_inv_hi, "TinyInlineInvDiagnosticVirtualTextErrorUnderCursorNoBg")
+  MiniTest.expect.equality(body_hi, "TinyInlineInvDiagnosticVirtualTextErrorNoBg")
+end
+
+T["get_diagnostic_highlights"]["under-cursor styling preserves NoBg signs"] = function()
+  local diag_ret = { line = 10, severity = 1, under_cursor = true }
+  local curline = 10
+  local blend_factor = 0.5
+  local index_diag = 1
+
+  vim.opt.cursorline = false
+
+  local diag_hi, diag_inv_hi, body_hi =
+    highlights.get_diagnostic_highlights(blend_factor, diag_ret, curline, index_diag, {
+      current_line = {
+        enabled = true,
+      },
+      under_cursor = {
+        enabled = true,
+      },
+    })
+
+  MiniTest.expect.equality(diag_hi, "TinyInlineDiagnosticVirtualTextErrorCurrentLineUnderCursor")
+  MiniTest.expect.equality(
+    diag_inv_hi,
+    "TinyInlineInvDiagnosticVirtualTextErrorCurrentLineUnderCursorNoBg"
+  )
+  MiniTest.expect.equality(body_hi, "TinyInlineInvDiagnosticVirtualTextErrorNoBg")
+end
+
+T["get_diagnostic_highlights"]["applies under-cursor styling above current-line styling"] = function()
+  local diag_ret = { line = 10, severity = 1, under_cursor = true }
+  local curline = 10
+  local blend_factor = 0.5
+  local index_diag = 1
+
+  local diag_hi, diag_inv_hi, body_hi =
+    highlights.get_diagnostic_highlights(blend_factor, diag_ret, curline, index_diag, {
+      current_line = {
+        enabled = true,
+      },
+      under_cursor = {
+        enabled = true,
+      },
+    })
+
+  MiniTest.expect.equality(diag_hi, "TinyInlineDiagnosticVirtualTextErrorCurrentLineUnderCursor")
+  MiniTest.expect.equality(
+    diag_inv_hi,
+    "TinyInlineInvDiagnosticVirtualTextErrorCurrentLineUnderCursorNoBg"
+  )
+  MiniTest.expect.equality(body_hi, "TinyInlineInvDiagnosticVirtualTextErrorNoBg")
+end
+
 T["setup_highlights"] = MiniTest.new_set()
 
 T["setup_highlights"]["creates non-current diagnostic groups"] = function()
@@ -296,6 +364,107 @@ T["setup_highlights"]["creates current-line diagnostic groups"] = function()
 
   MiniTest.expect.equality(current_sign_no_bg.bg, nil)
   MiniTest.expect.equality(current_sign_no_bg.bold, true)
+end
+
+T["setup_highlights"]["creates under-cursor diagnostic groups"] = function()
+  vim.api.nvim_set_hl(0, "DiagnosticError", { fg = "#ff0000" })
+  vim.api.nvim_set_hl(0, "DiagnosticWarn", { fg = "#ffff00" })
+  vim.api.nvim_set_hl(0, "DiagnosticInfo", { fg = "#00ffff" })
+  vim.api.nvim_set_hl(0, "DiagnosticHint", { fg = "#00ff00" })
+  vim.api.nvim_set_hl(0, "NonText", { fg = "#888888" })
+  vim.api.nvim_set_hl(0, "CursorLine", { bg = "#111111" })
+  vim.api.nvim_set_hl(0, "Normal", { bg = "#000000", fg = "#ffffff" })
+
+  highlights.setup_highlights(
+    { factor = 0.5 },
+    {
+      error = "DiagnosticError",
+      warn = "DiagnosticWarn",
+      info = "DiagnosticInfo",
+      hint = "DiagnosticHint",
+      ok = "DiagnosticInfo",
+      arrow = "NonText",
+      background = "CursorLine",
+      mixing_color = "Normal",
+    },
+    false,
+    {
+      under_cursor = {
+        enabled = true,
+        underline = true,
+        bold = true,
+      },
+    }
+  )
+
+  local under = vim.api.nvim_get_hl(0, {
+    name = "TinyInlineDiagnosticVirtualTextErrorUnderCursor",
+    link = false,
+  })
+
+  MiniTest.expect.equality(under.underline, true)
+  MiniTest.expect.equality(under.bold, true)
+end
+
+T["setup_highlights"]["combines current-line and under-cursor styles"] = function()
+  vim.api.nvim_set_hl(0, "DiagnosticError", { fg = "#ff0000" })
+  vim.api.nvim_set_hl(0, "DiagnosticWarn", { fg = "#ffff00" })
+  vim.api.nvim_set_hl(0, "DiagnosticInfo", { fg = "#00ffff" })
+  vim.api.nvim_set_hl(0, "DiagnosticHint", { fg = "#00ff00" })
+  vim.api.nvim_set_hl(0, "NonText", { fg = "#888888" })
+  vim.api.nvim_set_hl(0, "CursorLine", { bg = "#111111" })
+  vim.api.nvim_set_hl(0, "Normal", { bg = "#000000", fg = "#ffffff" })
+  vim.api.nvim_set_hl(0, "PmenuSel", { bg = "#222222", fg = "#ffffff" })
+
+  highlights.setup_highlights(
+    { factor = 0.5 },
+    {
+      error = "DiagnosticError",
+      warn = "DiagnosticWarn",
+      info = "DiagnosticInfo",
+      hint = "DiagnosticHint",
+      ok = "DiagnosticInfo",
+      arrow = "NonText",
+      background = "CursorLine",
+      mixing_color = "Normal",
+    },
+    false,
+    {
+      current_line = {
+        enabled = true,
+        bg = "PmenuSel",
+        bold = true,
+      },
+      under_cursor = {
+        enabled = true,
+        underline = true,
+      },
+    }
+  )
+
+  local combined = vim.api.nvim_get_hl(0, {
+    name = "TinyInlineDiagnosticVirtualTextErrorCurrentLineUnderCursor",
+    link = false,
+  })
+
+  MiniTest.expect.equality(
+    combined.bg,
+    vim.api.nvim_get_hl(0, {
+      name = "PmenuSel",
+      link = false,
+    }).bg
+  )
+  MiniTest.expect.equality(combined.bold, true)
+  MiniTest.expect.equality(combined.underline, true)
+
+  local combined_sign_no_bg = vim.api.nvim_get_hl(0, {
+    name = "TinyInlineInvDiagnosticVirtualTextErrorCurrentLineUnderCursorNoBg",
+    link = false,
+  })
+
+  MiniTest.expect.equality(combined_sign_no_bg.bg, nil)
+  MiniTest.expect.equality(combined_sign_no_bg.bold, true)
+  MiniTest.expect.equality(combined_sign_no_bg.underline, true)
 end
 
 return T

@@ -304,6 +304,146 @@ T["get_chunks"]["returns chunk info for diagnostic"] = function()
   end)
 end
 
+T["get_chunks"]["marks diagnostics under the cursor"] = function()
+  H.with_win_buf({ "test line" }, { 1, 6 }, 80, function(buf)
+    local opts = H.make_opts({
+      options = {
+        overflow = { mode = "none" },
+        multilines = { enabled = false },
+        softwrap = 10,
+        break_line = { enabled = false },
+        show_source = { enabled = false },
+        show_code = false,
+      },
+    })
+    local diags = {
+      {
+        message = "test error",
+        severity = vim.diagnostic.severity.ERROR,
+        lnum = 0,
+        col = 5,
+        end_col = 8,
+      },
+    }
+
+    local result = chunk.get_chunks(opts, diags, 1, 0, 0, buf)
+
+    MiniTest.expect.equality(result.under_cursor, true)
+  end)
+end
+
+T["get_chunks"]["marks diagnostics under cursor at range start"] = function()
+  H.with_win_buf({ "test line" }, { 1, 5 }, 80, function(buf)
+    local opts = H.make_opts({
+      options = {
+        overflow = { mode = "none" },
+        multilines = { enabled = false },
+        softwrap = 10,
+        break_line = { enabled = false },
+        show_source = { enabled = false },
+        show_code = false,
+      },
+    })
+    local diags = {
+      {
+        message = "test error",
+        severity = vim.diagnostic.severity.ERROR,
+        lnum = 0,
+        col = 5,
+        end_col = 8,
+      },
+    }
+
+    local result = chunk.get_chunks(opts, diags, 1, 0, 0, buf)
+
+    MiniTest.expect.equality(result.under_cursor, true)
+  end)
+end
+
+T["get_chunks"]["marks diagnostics under cursor before exclusive range end"] = function()
+  H.with_win_buf({ "test line" }, { 1, 7 }, 80, function(buf)
+    local opts = H.make_opts({
+      options = {
+        overflow = { mode = "none" },
+        multilines = { enabled = false },
+        softwrap = 10,
+        break_line = { enabled = false },
+        show_source = { enabled = false },
+        show_code = false,
+      },
+    })
+    local diags = {
+      {
+        message = "test error",
+        severity = vim.diagnostic.severity.ERROR,
+        lnum = 0,
+        col = 5,
+        end_col = 8,
+      },
+    }
+
+    local result = chunk.get_chunks(opts, diags, 1, 0, 0, buf)
+
+    MiniTest.expect.equality(result.under_cursor, true)
+  end)
+end
+
+T["get_chunks"]["does not mark diagnostics under cursor at exclusive range end"] = function()
+  H.with_win_buf({ "test line" }, { 1, 8 }, 80, function(buf)
+    local opts = H.make_opts({
+      options = {
+        overflow = { mode = "none" },
+        multilines = { enabled = false },
+        softwrap = 10,
+        break_line = { enabled = false },
+        show_source = { enabled = false },
+        show_code = false,
+      },
+    })
+    local diags = {
+      {
+        message = "test error",
+        severity = vim.diagnostic.severity.ERROR,
+        lnum = 0,
+        col = 5,
+        end_col = 8,
+      },
+    }
+
+    local result = chunk.get_chunks(opts, diags, 1, 0, 0, buf)
+
+    MiniTest.expect.equality(result.under_cursor, false)
+  end)
+end
+
+T["get_chunks"]["does not mark whole-line diagnostics as exactly under the cursor"] = function()
+  H.with_win_buf({ "test line" }, { 1, 6 }, 80, function(buf)
+    local opts = H.make_opts({
+      options = {
+        overflow = { mode = "none" },
+        multilines = { enabled = false },
+        softwrap = 10,
+        break_line = { enabled = false },
+        show_source = { enabled = false },
+        show_code = false,
+      },
+    })
+    local diags = {
+      {
+        message = "test error",
+        severity = vim.diagnostic.severity.ERROR,
+        lnum = 0,
+        col = 0,
+        end_col = 0,
+      },
+    }
+
+    local result = chunk.get_chunks(opts, diags, 1, 0, 0, buf)
+
+    MiniTest.expect.equality(result.under_cursor, false)
+  end)
+end
+
 T["get_chunks"]["keeps normal and multiline message spacing consistent"] = function()
   H.with_win_buf({ "test line", "cursor line" }, { 2, 0 }, 80, function(buf)
     local base_opts = {

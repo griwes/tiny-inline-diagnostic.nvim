@@ -248,6 +248,16 @@ require("tiny-inline-diagnostic").setup({
                 undercurl = false,
                 strikethrough = false,
             },
+            under_cursor = {
+                enabled = false,        -- Style diagnostics whose range is exactly under the cursor
+                fg = nil,               -- Optional highlight group or hex foreground
+                bg = nil,               -- Optional highlight group or hex background
+                bold = false,
+                italic = nil,
+                underline = true,
+                undercurl = false,
+                strikethrough = false,
+            },
         },
 
         -- Break long messages into separate lines

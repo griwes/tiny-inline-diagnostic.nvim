@@ -365,6 +365,26 @@ function M.get_message_chunks_for_overflow(message, offset, win_width, opts)
   return overflow_strategies.apply_wrap(message, false, win_width, opts)
 end
 
+---@param diag table
+---@param cursor_line number
+---@param cursor_col number
+---@return boolean
+local function is_diagnostic_under_cursor(diag, cursor_line, cursor_col)
+  if diag.is_related or diag.lnum ~= cursor_line or not diag.col or not diag.end_col then
+    return false
+  end
+
+  if diag.col == 0 and diag.end_col == 0 then
+    return false
+  end
+
+  if diag.col == diag.end_col and diag.col > 0 then
+    return cursor_col == diag.col or cursor_col == diag.col - 1
+  end
+
+  return cursor_col >= diag.col and cursor_col < diag.end_col
+end
+
 --- Get the chunks for a diagnostic message.
 ---@param opts table: The options table.
 ---@param diags_on_line table: The diagnostics on the line.
@@ -381,6 +401,8 @@ function M.get_chunks(opts, diags_on_line, diag_index, diag_line, cursor_line, b
   local need_to_be_under = false
 
   local diag = diags_on_line[diag_index]
+  local cursor_pos = vim.api.nvim_win_get_cursor(0)
+  local under_cursor = is_diagnostic_under_cursor(diag, cursor_pos[1] - 1, cursor_pos[2])
 
   local show_source = false
   if opts.options.show_source.enabled then
@@ -476,6 +498,7 @@ function M.get_chunks(opts, diags_on_line, diag_index, diag_line, cursor_line, b
     offset_win_col = other_extmarks_offset,
     need_to_be_under = need_to_be_under,
     line = diag.lnum,
+    under_cursor = under_cursor,
     is_related = diag.is_related or false,
   }
 end

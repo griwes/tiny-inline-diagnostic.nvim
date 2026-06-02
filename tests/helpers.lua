@@ -156,6 +156,16 @@ function H.make_opts(overrides)
           undercurl = false,
           strikethrough = false,
         },
+        under_cursor = {
+          enabled = false,
+          fg = nil,
+          bg = nil,
+          bold = false,
+          italic = nil,
+          underline = true,
+          undercurl = false,
+          strikethrough = false,
+        },
       },
       experimental = {
         use_window_local_extmarks = false,
