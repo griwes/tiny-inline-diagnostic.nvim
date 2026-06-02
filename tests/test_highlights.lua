@@ -153,6 +153,44 @@ T["get_diagnostic_highlights"]["can dim non-current diagnostic text"] = function
   MiniTest.expect.equality(body_hi, "TinyInlineInvDiagnosticVirtualTextErrorNoBg")
 end
 
+T["get_diagnostic_highlights"]["can apply current-line diagnostic styling"] = function()
+  local diag_ret = { line = 10, severity = 1 }
+  local curline = 10
+  local blend_factor = 0.5
+  local index_diag = 1
+
+  local diag_hi, diag_inv_hi, body_hi =
+    highlights.get_diagnostic_highlights(blend_factor, diag_ret, curline, index_diag, {
+      current_line = {
+        enabled = true,
+      },
+    })
+
+  MiniTest.expect.equality(diag_hi, "TinyInlineDiagnosticVirtualTextErrorCurrentLine")
+  MiniTest.expect.equality(diag_inv_hi, "TinyInlineInvDiagnosticVirtualTextErrorCurrentLineNoBg")
+  MiniTest.expect.equality(body_hi, "TinyInlineInvDiagnosticVirtualTextErrorNoBg")
+end
+
+T["get_diagnostic_highlights"]["current-line styling preserves NoBg signs"] = function()
+  local diag_ret = { line = 10, severity = 1 }
+  local curline = 10
+  local blend_factor = 0.5
+  local index_diag = 1
+
+  vim.opt.cursorline = false
+
+  local diag_hi, diag_inv_hi, body_hi =
+    highlights.get_diagnostic_highlights(blend_factor, diag_ret, curline, index_diag, {
+      current_line = {
+        enabled = true,
+      },
+    })
+
+  MiniTest.expect.equality(diag_hi, "TinyInlineDiagnosticVirtualTextErrorCurrentLine")
+  MiniTest.expect.equality(diag_inv_hi, "TinyInlineInvDiagnosticVirtualTextErrorCurrentLineNoBg")
+  MiniTest.expect.equality(body_hi, "TinyInlineInvDiagnosticVirtualTextErrorNoBg")
+end
+
 T["setup_highlights"] = MiniTest.new_set()
 
 T["setup_highlights"]["creates non-current diagnostic groups"] = function()
@@ -203,6 +241,61 @@ T["setup_highlights"]["creates non-current diagnostic groups"] = function()
       link = false,
     }).fg
   )
+end
+
+T["setup_highlights"]["creates current-line diagnostic groups"] = function()
+  vim.api.nvim_set_hl(0, "DiagnosticError", { fg = "#ff0000" })
+  vim.api.nvim_set_hl(0, "DiagnosticWarn", { fg = "#ffff00" })
+  vim.api.nvim_set_hl(0, "DiagnosticInfo", { fg = "#00ffff" })
+  vim.api.nvim_set_hl(0, "DiagnosticHint", { fg = "#00ff00" })
+  vim.api.nvim_set_hl(0, "NonText", { fg = "#888888" })
+  vim.api.nvim_set_hl(0, "CursorLine", { bg = "#111111" })
+  vim.api.nvim_set_hl(0, "Normal", { bg = "#000000", fg = "#ffffff" })
+  vim.api.nvim_set_hl(0, "PmenuSel", { bg = "#222222", fg = "#ffffff" })
+
+  highlights.setup_highlights(
+    { factor = 0.5 },
+    {
+      error = "DiagnosticError",
+      warn = "DiagnosticWarn",
+      info = "DiagnosticInfo",
+      hint = "DiagnosticHint",
+      ok = "DiagnosticInfo",
+      arrow = "NonText",
+      background = "CursorLine",
+      mixing_color = "Normal",
+    },
+    false,
+    {
+      current_line = {
+        enabled = true,
+        bg = "PmenuSel",
+        bold = true,
+      },
+    }
+  )
+
+  local current = vim.api.nvim_get_hl(0, {
+    name = "TinyInlineDiagnosticVirtualTextErrorCurrentLine",
+    link = false,
+  })
+
+  MiniTest.expect.equality(
+    current.bg,
+    vim.api.nvim_get_hl(0, {
+      name = "PmenuSel",
+      link = false,
+    }).bg
+  )
+  MiniTest.expect.equality(current.bold, true)
+
+  local current_sign_no_bg = vim.api.nvim_get_hl(0, {
+    name = "TinyInlineInvDiagnosticVirtualTextErrorCurrentLineNoBg",
+    link = false,
+  })
+
+  MiniTest.expect.equality(current_sign_no_bg.bg, nil)
+  MiniTest.expect.equality(current_sign_no_bg.bold, true)
 end
 
 return T

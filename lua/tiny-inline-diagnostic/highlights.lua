@@ -59,6 +59,15 @@ local function get_background_color(color)
   return get_highlight(color).bg
 end
 
+---@param key "fg"|"bg"
+---@return string
+local function get_configured_color(color, key)
+  if color == "None" or color:sub(1, 1) == "#" then
+    return color
+  end
+  return get_highlight(color)[key]
+end
+
 ---@param color string
 ---@return HighlightColor|table
 local function get_configured_highlight(color)
@@ -72,10 +81,7 @@ end
 ---@param color string
 ---@return string
 local function get_foreground_color(color)
-  if color:sub(1, 1) == "#" then
-    return color
-  end
-  return get_highlight(color).fg
+  return get_configured_color(color, "fg")
 end
 
 ---Get mixing color based on configuration
@@ -105,6 +111,37 @@ local function is_cursorline_visible()
   end
 
   return false
+end
+
+---@param base table
+---@param style table
+---@return table
+local function apply_highlight_style(base, style)
+  local result = vim.deepcopy(base)
+
+  if style.fg then
+    result.fg = get_configured_color(style.fg, "fg")
+  end
+  if style.bg then
+    result.bg = get_configured_color(style.bg, "bg")
+  end
+
+  for _, key in ipairs({ "bold", "italic", "underline", "undercurl", "strikethrough" }) do
+    if style[key] ~= nil then
+      result[key] = style[key]
+    end
+  end
+
+  return result
+end
+
+---@param base table
+---@param style table
+---@return table
+local function apply_highlight_style_preserve_no_bg(base, style)
+  local result = apply_highlight_style(base, style)
+  result.bg = "None"
+  return result
 end
 
 ---@param blend BlendOptions
@@ -154,6 +191,7 @@ function M.setup_highlights(blend, default_hi, transparent_bg, highlight_opts)
   local mixed_groups = highlighter_builder.build_mixed_groups(base_groups)
   local hi = highlighter_builder.merge_groups(base_groups, mixed_groups)
   local non_current = highlight_opts and highlight_opts.non_current or {}
+  local current_line = highlight_opts and highlight_opts.current_line or {}
 
   if non_current.enabled then
     local dim_highlight = get_configured_highlight(non_current.dim_color or "Comment")
@@ -181,6 +219,18 @@ function M.setup_highlights(blend, default_hi, transparent_bg, highlight_opts)
     end
   end
 
+  if current_line.enabled then
+    for _, name in pairs(SEVERITY_NAMES) do
+      local text_name = HIGHLIGHT_PREFIX .. name
+      local sign_name = INV_HIGHLIGHT_PREFIX .. name
+
+      hi[text_name .. "CurrentLine"] = apply_highlight_style(hi[text_name], current_line)
+      hi[sign_name .. "CurrentLine"] = apply_highlight_style(hi[sign_name], current_line)
+      hi[sign_name .. "CurrentLineNoBg"] =
+        apply_highlight_style_preserve_no_bg(hi[sign_name .. "NoBg"], current_line)
+    end
+  end
+
   for name, opts in pairs(hi) do
     vim.api.nvim_set_hl(0, name, opts)
   end
@@ -200,6 +250,9 @@ function M.get_diagnostic_highlights(blend_factor, diag_ret, curline, index_diag
 
   local cursorline_is_visible = is_cursorline_visible()
   local non_current = opts and opts.non_current or {}
+  local current_line = opts and opts.current_line or {}
+  local is_current_line = diag_ret.line and diag_ret.line == curline
+  local sign_suffix = ""
 
   if
     (diag_ret.line and diag_ret.line == curline)
@@ -221,7 +274,16 @@ function M.get_diagnostic_highlights(blend_factor, diag_ret, curline, index_diag
     diag_inv_hi = diag_inv_hi .. "NoBg"
   end
 
-  if diag_ret.line and diag_ret.line ~= curline and non_current.enabled then
+  if diag_inv_hi:find("NoBg$") then
+    sign_suffix = "NoBg"
+  end
+
+  if is_current_line and current_line.enabled then
+    local severity_name = SEVERITY_NAMES[diag_ret.severity]
+      or SEVERITY_NAMES[DIAGNOSTIC_SEVERITIES.ERROR]
+    diag_hi = HIGHLIGHT_PREFIX .. severity_name .. "CurrentLine"
+    diag_inv_hi = INV_HIGHLIGHT_PREFIX .. severity_name .. "CurrentLine" .. sign_suffix
+  elseif diag_ret.line and diag_ret.line ~= curline and non_current.enabled then
     diag_hi = diag_hi .. "NonCurrent"
   end
 

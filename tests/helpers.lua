@@ -146,6 +146,16 @@ function H.make_opts(overrides)
           bg = nil,
           italic = nil,
         },
+        current_line = {
+          enabled = false,
+          fg = nil,
+          bg = nil,
+          bold = false,
+          italic = nil,
+          underline = false,
+          undercurl = false,
+          strikethrough = false,
+        },
       },
       experimental = {
         use_window_local_extmarks = false,

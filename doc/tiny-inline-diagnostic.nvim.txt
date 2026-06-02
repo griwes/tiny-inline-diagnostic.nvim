@@ -265,6 +265,16 @@ CONFIGURATION*tiny-inline-diagnostic.nvim-tiny-inline-diagnostic.nvim-configurat
                     bg = nil,               -- Optional highlight group or hex background; use "None" for transparent
                     italic = nil,           -- Optional italic override; nil inherits from dim_color when it is a highlight group
                 },
+                current_line = {
+                    enabled = false,        -- Style diagnostics on the cursor line
+                    fg = nil,               -- Optional highlight group or hex foreground
+                    bg = nil,               -- Optional highlight group or hex background
+                    bold = false,
+                    italic = nil,
+                    underline = false,
+                    undercurl = false,
+                    strikethrough = false,
+                },
             },
     
             -- Break long messages into separate lines
