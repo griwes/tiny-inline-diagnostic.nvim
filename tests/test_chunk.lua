@@ -128,6 +128,62 @@ T["add_message_text"]["handles multiple chunks"] = function()
   MiniTest.expect.equality(#virt_texts > 0, true)
 end
 
+T["add_message_text"]["uses configured message padding before the closing sign"] = function()
+  local virt_texts = {}
+  local opts = H.make_opts({
+    signs = {
+      right = "",
+    },
+    options = {
+      padding = {
+        right = "__",
+      },
+    },
+  })
+
+  chunk.add_message_text(
+    virt_texts,
+    "message",
+    1,
+    1,
+    1,
+    opts,
+    "DiagnosticError",
+    "DiagnosticErrorInv"
+  )
+
+  MiniTest.expect.equality(virt_texts[1], { " message__", "DiagnosticError" })
+  MiniTest.expect.equality(virt_texts[2], { "", "DiagnosticErrorInv" })
+end
+
+T["add_message_text"]["keeps an empty closing sign separate from message padding"] = function()
+  local virt_texts = {}
+  local opts = H.make_opts({
+    signs = {
+      right = "",
+    },
+    options = {
+      padding = {
+        right = "__",
+      },
+    },
+  })
+
+  chunk.add_message_text(
+    virt_texts,
+    "message",
+    1,
+    1,
+    1,
+    opts,
+    "DiagnosticError",
+    "DiagnosticErrorInv"
+  )
+
+  MiniTest.expect.equality(virt_texts[1], { " message__", "DiagnosticError" })
+  MiniTest.expect.equality(virt_texts[2], { "", "DiagnosticErrorInv" })
+end
+
 T["get_header_from_chunk"] = MiniTest.new_set()
 
 T["get_header_from_chunk"]["creates header with left sign for first diagnostic"] = function()
@@ -199,6 +255,62 @@ T["get_body_from_chunk"]["uses vertical_end for last chunk"] = function()
     end
   end
   MiniTest.expect.equality(has_vertical_end, true)
+end
+
+T["get_body_from_chunk"]["uses configured body padding before the closing sign"] = function()
+  local opts = H.make_opts({
+    signs = {
+      right = "",
+    },
+    options = {
+      padding = {
+        right = "__",
+      },
+    },
+  })
+
+  local result = chunk.get_body_from_chunk(
+    "last chunk",
+    1,
+    2,
+    2,
+    false,
+    opts,
+    "DiagnosticError",
+    "DiagnosticErrorInv",
+    1
+  )
+
+  MiniTest.expect.equality(result[#result - 1], { "__", "DiagnosticError" })
+  MiniTest.expect.equality(result[#result], { "", "DiagnosticErrorInv" })
+end
+
+T["get_body_from_chunk"]["keeps an empty closing sign separate from body padding"] = function()
+  local opts = H.make_opts({
+    signs = {
+      right = "",
+    },
+    options = {
+      padding = {
+        right = "__",
+      },
+    },
+  })
+
+  local result = chunk.get_body_from_chunk(
+    "last chunk",
+    1,
+    2,
+    2,
+    false,
+    opts,
+    "DiagnosticError",
+    "DiagnosticErrorInv",
+    1
+  )
+
+  MiniTest.expect.equality(result[#result - 1], { "__", "DiagnosticError" })
+  MiniTest.expect.equality(result[#result], { "", "DiagnosticErrorInv" })
 end
 
 T["get_arrow_from_chunk"] = MiniTest.new_set()

@@ -179,6 +179,12 @@ require("tiny-inline-diagnostic").setup({
         -- Minimum number of characters before wrapping long messages
         softwrap = 30,
 
+        -- Interior padding rendered after diagnostic message/body text with the
+        -- diagnostic message highlight, before any closing `signs.right` glyph.
+        padding = {
+            right = " ",
+        },
+
         -- Control how diagnostic messages are displayed
         -- NOTE: When using display_count = true, you need to enable multiline diagnostics with multilines.enabled = true
         --       If you want them to always be displayed, you can also set multilines.always_show = true.

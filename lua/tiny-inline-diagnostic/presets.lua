@@ -83,11 +83,14 @@ function M.build(name, transparent_bg)
       signs = {
         arrow = "   ",
         up_arrow = "",
-        right = " ",
+        right = "",
         left = "",
       },
       options = {
         set_arrow_to_diag_color = true,
+        padding = {
+          right = "  ",
+        },
       },
     }),
   }

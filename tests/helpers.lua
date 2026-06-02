@@ -103,6 +103,9 @@ function H.make_opts(overrides)
       use_icons_from_diagnostic = false,
       throttle = 20,
       softwrap = 30,
+      padding = {
+        right = " ",
+      },
       multilines = {
         enabled = false,
         always_show = false,
@@ -200,6 +203,7 @@ function H.make_opts(overrides)
     normalize_option(base.options.show_related, defaults.show_related, "enabled")
   base.options.right_align =
     normalize_option(base.options.right_align, defaults.right_align, "enabled")
+  base.options.padding = vim.tbl_deep_extend("force", defaults.padding, base.options.padding or {})
   base.options.highlights =
     vim.tbl_deep_extend("force", defaults.highlights, base.options.highlights or {})
 

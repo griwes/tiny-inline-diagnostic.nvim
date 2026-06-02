@@ -237,30 +237,31 @@ function M.add_message_text(
   diag_inv_hi,
   is_related
 )
-  local text_after_message = " "
-  local text_before_message = " "
+  local padding = opts.options.padding
+  local right_padding = padding.right
+  local message_prefix = " "
 
   if is_related then
-    text_before_message = ""
+    message_prefix = ""
   end
 
   if num_chunks == 1 then
     if total_chunks == 1 or index_diag == total_chunks then
       if message ~= "" then
-        message = message .. " "
+        message = message .. right_padding
       end
-      vim.list_extend(
-        virt_texts,
-        { { text_before_message .. message, diag_hi }, { opts.signs.right, diag_inv_hi } }
-      )
+      vim.list_extend(virt_texts, {
+        { message_prefix .. message, diag_hi },
+        { opts.signs.right, diag_inv_hi },
+      })
     else
       vim.list_extend(virt_texts, {
-        { text_before_message .. message .. text_after_message, diag_hi },
+        { message_prefix .. message .. right_padding, diag_hi },
       })
     end
   else
     vim.list_extend(virt_texts, {
-      { text_before_message .. message .. text_after_message, diag_hi },
+      { message_prefix .. message .. right_padding, diag_hi },
     })
   end
 end
@@ -291,6 +292,7 @@ function M.get_body_from_chunk(
 )
   local vertical_sign = opts.signs.vertical
   local is_last = index_diag == total_chunks and index_chunk == num_chunks
+  local padding = opts.options.padding
 
   if index_chunk == num_chunks then
     vertical_sign = opts.signs.vertical_end
@@ -300,13 +302,13 @@ function M.get_body_from_chunk(
   if is_related then
     chunk_virtual_texts = {
       { "    " .. chunk, diag_hi },
-      { " ", diag_hi },
+      { padding.right, diag_hi },
     }
   else
     chunk_virtual_texts = {
       { vertical_sign, diag_hi },
       { " " .. chunk, diag_hi },
-      { " ", diag_hi },
+      { padding.right, diag_hi },
     }
   end
 

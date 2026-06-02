@@ -43,6 +43,9 @@ local default_config = {
     use_icons_from_diagnostic = false,
     throttle = 20,
     softwrap = 30,
+    padding = {
+      right = " ",
+    },
     multilines = {
       enabled = false,
       always_show = false,
@@ -169,6 +172,9 @@ local function normalize_config(config)
 
   config.options.right_align =
     normalize_option(config.options.right_align, default_config.options.right_align, "enabled")
+
+  config.options.padding =
+    vim.tbl_deep_extend("force", default_config.options.padding, config.options.padding or {})
 
   config.options.highlights =
     vim.tbl_deep_extend("force", default_config.options.highlights, config.options.highlights or {})

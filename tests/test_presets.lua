@@ -49,7 +49,8 @@ end
 T["build"]["creates powerline preset"] = function()
   local result = presets.build("powerline", false)
   MiniTest.expect.equality(result.signs.left, "")
-  MiniTest.expect.equality(result.signs.right, " ")
+  MiniTest.expect.equality(result.signs.right, "")
+  MiniTest.expect.equality(result.options.padding.right, "  ")
   MiniTest.expect.equality(result.options.set_arrow_to_diag_color, true)
 end
 
