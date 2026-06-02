@@ -229,6 +229,17 @@ require("tiny-inline-diagnostic").setup({
             min_space = 1,              -- Minimum gap between buffer text and diagnostics
         },
 
+        -- Fine-grained diagnostic highlight policy
+        highlights = {
+            non_current = {
+                enabled = false,        -- Dim diagnostics not on the cursor line
+                dim_factor = 0.35,      -- Amount of original diagnostic color to keep
+                dim_color = "Comment",  -- Highlight group or hex color to blend toward
+                bg = nil,               -- Optional highlight group or hex background; use "None" for transparent
+                italic = nil,           -- Optional italic override; nil inherits from dim_color when it is a highlight group
+            },
+        },
+
         -- Break long messages into separate lines
         break_line = {
             enabled = false,           -- Enable automatic line breaking

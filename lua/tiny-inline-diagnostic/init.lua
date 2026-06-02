@@ -77,6 +77,15 @@ local default_config = {
       enabled = false,
       min_space = 1,
     },
+    highlights = {
+      non_current = {
+        enabled = false,
+        dim_factor = 0.35,
+        dim_color = "Comment",
+        bg = nil,
+        italic = nil,
+      },
+    },
     experimental = {
       use_window_local_extmarks = false,
     },
@@ -92,7 +101,7 @@ local function setup_colorscheme_handler(config)
   vim.api.nvim_create_autocmd("ColorScheme", {
     pattern = "*",
     callback = function()
-      hi.setup_highlights(config.blend, config.hi, config.transparent_bg)
+      hi.setup_highlights(config.blend, config.hi, config.transparent_bg, config.options.highlights)
     end,
   })
 end
@@ -141,6 +150,9 @@ local function normalize_config(config)
   config.options.right_align =
     normalize_option(config.options.right_align, default_config.options.right_align, "enabled")
 
+  config.options.highlights =
+    vim.tbl_deep_extend("force", default_config.options.highlights, config.options.highlights or {})
+
   return config
 end
 
@@ -154,7 +166,7 @@ function M.setup(opts)
   M.config = config
   M._original_options = vim.deepcopy(config.options)
 
-  hi.setup_highlights(config.blend, config.hi, config.transparent_bg)
+  hi.setup_highlights(config.blend, config.hi, config.transparent_bg, config.options.highlights)
 
   setup_colorscheme_handler(config)
   diag.set_diagnostic_autocmds(config)
@@ -185,7 +197,7 @@ function M.change(blend, highlights)
     hi = highlights or M.config.hi,
   })
 
-  hi.setup_highlights(config.blend, config.hi, config.transparent_bg)
+  hi.setup_highlights(config.blend, config.hi, config.transparent_bg, config.options.highlights)
 end
 
 --- Enable the diagnostic display.

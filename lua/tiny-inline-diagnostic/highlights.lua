@@ -53,10 +53,29 @@ end
 ---@param color string
 ---@return string
 local function get_background_color(color)
-  if color:sub(1, 1) == "#" then
+  if color == "None" or color:sub(1, 1) == "#" then
     return color
   end
   return get_highlight(color).bg
+end
+
+---@param color string
+---@return HighlightColor|table
+local function get_configured_highlight(color)
+  if color == "None" or color:sub(1, 1) == "#" then
+    return {}
+  end
+  return get_highlight(color)
+end
+
+---Get foreground color based on configuration
+---@param color string
+---@return string
+local function get_foreground_color(color)
+  if color:sub(1, 1) == "#" then
+    return color
+  end
+  return get_highlight(color).fg
 end
 
 ---Get mixing color based on configuration
@@ -90,7 +109,9 @@ end
 
 ---@param blend BlendOptions
 ---@param default_hi DefaultHighlights
-function M.setup_highlights(blend, default_hi, transparent_bg)
+---@param transparent_bg boolean
+---@param highlight_opts table|nil
+function M.setup_highlights(blend, default_hi, transparent_bg, highlight_opts)
   if not transparent_bg then
     transparent_bg = false
   end
@@ -132,6 +153,33 @@ function M.setup_highlights(blend, default_hi, transparent_bg)
   local base_groups = highlighter_builder.build_base_groups(colors, blends, transparent_bg)
   local mixed_groups = highlighter_builder.build_mixed_groups(base_groups)
   local hi = highlighter_builder.merge_groups(base_groups, mixed_groups)
+  local non_current = highlight_opts and highlight_opts.non_current or {}
+
+  if non_current.enabled then
+    local dim_highlight = get_configured_highlight(non_current.dim_color or "Comment")
+    local dim_color = get_foreground_color(non_current.dim_color or "Comment")
+
+    for _, name in pairs(SEVERITY_NAMES) do
+      local name_lower = string.lower(name)
+      local base_name = HIGHLIGHT_PREFIX .. name
+      local base = hi[base_name]
+      local style = {
+        fg = utils.blend(colors[name_lower].fg, dim_color, non_current.dim_factor or 0.35),
+      }
+
+      if non_current.bg ~= nil then
+        style.bg = get_background_color(non_current.bg)
+      end
+
+      if non_current.italic ~= nil then
+        style.italic = non_current.italic
+      elseif dim_highlight.italic ~= nil then
+        style.italic = dim_highlight.italic
+      end
+
+      hi[base_name .. "NonCurrent"] = vim.tbl_deep_extend("force", base, style)
+    end
+  end
 
   for name, opts in pairs(hi) do
     vim.api.nvim_set_hl(0, name, opts)
@@ -143,13 +191,15 @@ end
 ---@param diag_ret table
 ---@param curline number
 ---@param index_diag number
+---@param opts table|nil
 ---@return string diag_hi
 ---@return string diag_inv_hi
 ---@return string body_hi
-function M.get_diagnostic_highlights(blend_factor, diag_ret, curline, index_diag)
+function M.get_diagnostic_highlights(blend_factor, diag_ret, curline, index_diag, opts)
   local diag_hi, diag_inv_hi, body_hi = M.get_diagnostic_highlights_from_severity(diag_ret.severity)
 
   local cursorline_is_visible = is_cursorline_visible()
+  local non_current = opts and opts.non_current or {}
 
   if
     (diag_ret.line and diag_ret.line == curline)
@@ -169,6 +219,10 @@ function M.get_diagnostic_highlights(blend_factor, diag_ret, curline, index_diag
     or not cursorline_is_visible
   then
     diag_inv_hi = diag_inv_hi .. "NoBg"
+  end
+
+  if diag_ret.line and diag_ret.line ~= curline and non_current.enabled then
+    diag_hi = diag_hi .. "NonCurrent"
   end
 
   return diag_hi, diag_inv_hi, body_hi

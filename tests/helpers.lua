@@ -138,6 +138,15 @@ function H.make_opts(overrides)
         enabled = false,
         min_space = 1,
       },
+      highlights = {
+        non_current = {
+          enabled = false,
+          dim_factor = 0.35,
+          dim_color = "Comment",
+          bg = nil,
+          italic = nil,
+        },
+      },
       experimental = {
         use_window_local_extmarks = false,
       },
@@ -171,6 +180,8 @@ function H.make_opts(overrides)
     normalize_option(base.options.show_related, defaults.show_related, "enabled")
   base.options.right_align =
     normalize_option(base.options.right_align, defaults.right_align, "enabled")
+  base.options.highlights =
+    vim.tbl_deep_extend("force", defaults.highlights, base.options.highlights or {})
 
   return base
 end
