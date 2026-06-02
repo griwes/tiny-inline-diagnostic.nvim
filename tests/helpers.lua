@@ -134,6 +134,10 @@ function H.make_opts(overrides)
       override_open_float = false,
       overwrite_events = nil,
       multiple_diag_under_cursor = false,
+      right_align = {
+        enabled = false,
+        min_space = 1,
+      },
       experimental = {
         use_window_local_extmarks = false,
       },
@@ -157,10 +161,16 @@ function H.make_opts(overrides)
     end
   end
 
-  base.options.multilines = normalize_option(base.options.multilines, defaults.multilines, "enabled")
-  base.options.add_messages = normalize_option(base.options.add_messages, defaults.add_messages, "messages")
-  base.options.show_source = normalize_option(base.options.show_source, defaults.show_source, "enabled")
-  base.options.show_related = normalize_option(base.options.show_related, defaults.show_related, "enabled")
+  base.options.multilines =
+    normalize_option(base.options.multilines, defaults.multilines, "enabled")
+  base.options.add_messages =
+    normalize_option(base.options.add_messages, defaults.add_messages, "messages")
+  base.options.show_source =
+    normalize_option(base.options.show_source, defaults.show_source, "enabled")
+  base.options.show_related =
+    normalize_option(base.options.show_related, defaults.show_related, "enabled")
+  base.options.right_align =
+    normalize_option(base.options.right_align, defaults.right_align, "enabled")
 
   return base
 end

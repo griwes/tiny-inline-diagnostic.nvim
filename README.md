@@ -223,6 +223,12 @@ require("tiny-inline-diagnostic").setup({
             padding = 0,               -- Extra characters to trigger wrapping earlier
         },
 
+        -- Align diagnostics to the right side of the window when there is room
+        right_align = {
+            enabled = false,
+            min_space = 1,              -- Minimum gap between buffer text and diagnostics
+        },
+
         -- Break long messages into separate lines
         break_line = {
             enabled = false,           -- Enable automatic line breaking

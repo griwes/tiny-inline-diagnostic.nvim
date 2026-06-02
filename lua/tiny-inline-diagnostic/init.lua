@@ -73,6 +73,10 @@ local default_config = {
     },
     override_open_float = false,
     overwrite_events = nil,
+    right_align = {
+      enabled = false,
+      min_space = 1,
+    },
     experimental = {
       use_window_local_extmarks = false,
     },
@@ -122,29 +126,20 @@ local function normalize_config(config)
     config = vim.tbl_deep_extend("force", config, preset)
   end
 
-  config.options.multilines = normalize_option(
-    config.options.multilines,
-    default_config.options.multilines,
-    "enabled"
-  )
+  config.options.multilines =
+    normalize_option(config.options.multilines, default_config.options.multilines, "enabled")
 
-  config.options.add_messages = normalize_option(
-    config.options.add_messages,
-    default_config.options.add_messages,
-    "messages"
-  )
+  config.options.add_messages =
+    normalize_option(config.options.add_messages, default_config.options.add_messages, "messages")
 
-  config.options.show_source = normalize_option(
-    config.options.show_source,
-    default_config.options.show_source,
-    "enabled"
-  )
+  config.options.show_source =
+    normalize_option(config.options.show_source, default_config.options.show_source, "enabled")
 
-  config.options.show_related = normalize_option(
-    config.options.show_related,
-    default_config.options.show_related,
-    "enabled"
-  )
+  config.options.show_related =
+    normalize_option(config.options.show_related, default_config.options.show_related, "enabled")
+
+  config.options.right_align =
+    normalize_option(config.options.right_align, default_config.options.right_align, "enabled")
 
   return config
 end
@@ -301,7 +296,14 @@ local function setup_commands()
   end, {
     nargs = 1,
     complete = function()
-      return { "enable", "disable", "toggle", "toggle_cursor_only", "toggle_all_diags_on_cursorline", "reset" }
+      return {
+        "enable",
+        "disable",
+        "toggle",
+        "toggle_cursor_only",
+        "toggle_all_diags_on_cursorline",
+        "reset",
+      }
     end,
     desc = "Control tiny-inline-diagnostic display",
   })

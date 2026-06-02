@@ -185,7 +185,8 @@ function M.create_extmarks(
       diag_line,
       virt_lines,
       virt_priority,
-      generate_uid
+      generate_uid,
+      opts.options.right_align
     )
 
     return
@@ -201,7 +202,7 @@ function M.create_extmarks(
       priority = virt_priority,
       need_to_be_under = need_to_be_under,
       buf_lines_count = buf_lines_count,
-    }, generate_uid)
+    }, generate_uid, opts.options.right_align)
   else
     extmark_writer.create_simple_extmarks(
       bufnr,
@@ -212,7 +213,8 @@ function M.create_extmarks(
       offset,
       signs_offset,
       virt_priority,
-      generate_uid
+      generate_uid,
+      opts.options.right_align
     )
   end
 end

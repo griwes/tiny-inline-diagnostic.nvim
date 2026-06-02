@@ -37,6 +37,78 @@ T["create_single_extmark"]["creates extmark with overlay position"] = function()
   end)
 end
 
+T["create_single_extmark"]["right aligns virtual text when it fits"] = function()
+  H.with_win_buf({ "line" }, { 1, 0 }, 80, function(buf, win)
+    local ns = vim.api.nvim_create_namespace("test_writer_right_align")
+    local uid_fn = H.uid_gen()
+    local virt_text = { { "virtual text", "Comment" } }
+
+    extmark_writer.create_single_extmark(
+      buf,
+      ns,
+      0,
+      virt_text,
+      nil,
+      100,
+      nil,
+      uid_fn,
+      { enabled = true, min_space = 1 }
+    )
+
+    local marks = vim.api.nvim_buf_get_extmarks(buf, ns, 0, -1, { details = true })
+    MiniTest.expect.equality(marks[1][4].virt_text_pos, "right_align")
+  end)
+end
+
+T["create_single_extmark"]["does not right align over buffer text"] = function()
+  H.with_win_buf({ string.rep("x", 78) }, { 1, 0 }, 80, function(buf, win)
+    local ns = vim.api.nvim_create_namespace("test_writer_right_align_overflow")
+    local uid_fn = H.uid_gen()
+    local virt_text = { { "virtual text", "Comment" } }
+
+    extmark_writer.create_single_extmark(
+      buf,
+      ns,
+      0,
+      virt_text,
+      nil,
+      100,
+      nil,
+      uid_fn,
+      { enabled = true, min_space = 1 }
+    )
+
+    local marks = vim.api.nvim_buf_get_extmarks(buf, ns, 0, -1, { details = true })
+    MiniTest.expect.equality(marks[1][4].virt_text_pos, "eol")
+  end)
+end
+
+T["create_single_extmark"]["does not right align hidden buffers"] = function()
+  local buf = vim.api.nvim_create_buf(false, true)
+  vim.api.nvim_buf_set_lines(buf, 0, -1, false, { "line" })
+
+  local ns = vim.api.nvim_create_namespace("test_writer_right_align_hidden_buffer")
+  local uid_fn = H.uid_gen()
+  local virt_text = { { "virtual text", "Comment" } }
+
+  extmark_writer.create_single_extmark(
+    buf,
+    ns,
+    0,
+    virt_text,
+    nil,
+    100,
+    nil,
+    uid_fn,
+    { enabled = true, min_space = 1 }
+  )
+
+  local marks = vim.api.nvim_buf_get_extmarks(buf, ns, 0, -1, { details = true })
+  MiniTest.expect.equality(marks[1][4].virt_text_pos, "eol")
+
+  vim.api.nvim_buf_delete(buf, { force = true })
+end
+
 T["create_multiline_extmark"] = MiniTest.new_set()
 
 T["create_multiline_extmark"]["creates multiline extmark"] = function()
@@ -68,6 +140,31 @@ T["create_multiline_extmark"]["trims first line spaces"] = function()
 
     local marks = vim.api.nvim_buf_get_extmarks(buf, ns, 0, -1, { details = true })
     MiniTest.expect.equality(#marks > 0, true)
+  end)
+end
+
+T["create_multiline_extmark"]["preserves first line spaces when right aligned"] = function()
+  H.with_win_buf({ "line 1" }, { 1, 0 }, 80, function(buf, win)
+    local ns = vim.api.nvim_create_namespace("test_multiline_right_align")
+    local uid_fn = H.uid_gen()
+    local virt_lines = {
+      { { "first", "Comment" }, { "  second  ", "Comment" } },
+      { { "third", "Comment" } },
+    }
+
+    extmark_writer.create_multiline_extmark(
+      buf,
+      ns,
+      0,
+      virt_lines,
+      100,
+      uid_fn,
+      { enabled = true, min_space = 1 }
+    )
+
+    local marks = vim.api.nvim_buf_get_extmarks(buf, ns, 0, -1, { details = true })
+    MiniTest.expect.equality(marks[1][4].virt_text_pos, "right_align")
+    MiniTest.expect.equality(marks[1][4].virt_text[2][1], "  second  ")
   end)
 end
 
