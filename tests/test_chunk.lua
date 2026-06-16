@@ -76,6 +76,37 @@ T["add_severity_icons"]["adds icons for multiple severities"] = function()
   MiniTest.expect.equality(#virt_texts > 0, true)
 end
 
+T["add_severity_icons"]["keeps non-current severity icons on severity colors"] = function()
+  local virt_texts = {}
+  local opts = H.make_opts({
+    options = {
+      use_icons_from_diagnostic = false,
+      add_messages = { messages = true, show_multiple_glyphs = true, use_max_severity = false },
+    },
+  })
+  local severities = {
+    vim.diagnostic.severity.ERROR,
+    vim.diagnostic.severity.WARN,
+    vim.diagnostic.severity.INFO,
+  }
+
+  chunk.add_severity_icons(
+    virt_texts,
+    opts,
+    severities,
+    "TinyInlineDiagnosticVirtualTextErrorNonCurrent"
+  )
+
+  MiniTest.expect.equality(
+    virt_texts[1],
+    { "●", "TinyInlineDiagnosticVirtualTextInfoNonCurrentIcon" }
+  )
+  MiniTest.expect.equality(
+    virt_texts[2],
+    { "●", "TinyInlineDiagnosticVirtualTextWarnNonCurrentIcon" }
+  )
+end
+
 T["add_severity_icons"]["handles empty severities"] = function()
   local virt_texts = {}
   local opts = H.make_opts({

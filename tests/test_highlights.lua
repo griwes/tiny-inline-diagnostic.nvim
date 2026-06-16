@@ -141,7 +141,7 @@ T["get_diagnostic_highlights"]["can dim non-current diagnostic text"] = function
   local blend_factor = 0.5
   local index_diag = 1
 
-  local diag_hi, diag_inv_hi, body_hi =
+  local diag_hi, diag_inv_hi, body_hi, icon_hi =
     highlights.get_diagnostic_highlights(blend_factor, diag_ret, curline, index_diag, {
       non_current = {
         enabled = true,
@@ -151,6 +151,7 @@ T["get_diagnostic_highlights"]["can dim non-current diagnostic text"] = function
   MiniTest.expect.equality(diag_hi, "TinyInlineDiagnosticVirtualTextErrorNonCurrent")
   MiniTest.expect.equality(diag_inv_hi, "TinyInlineInvDiagnosticVirtualTextErrorNoBg")
   MiniTest.expect.equality(body_hi, "TinyInlineInvDiagnosticVirtualTextErrorNoBg")
+  MiniTest.expect.equality(icon_hi, "TinyInlineDiagnosticVirtualTextErrorNonCurrentIcon")
 end
 
 T["get_diagnostic_highlights"]["can apply current-line diagnostic styling"] = function()
@@ -298,10 +299,21 @@ T["setup_highlights"]["creates non-current diagnostic groups"] = function()
     name = "TinyInlineDiagnosticVirtualTextErrorNonCurrent",
     link = false,
   })
+  local icon = vim.api.nvim_get_hl(0, {
+    name = "TinyInlineDiagnosticVirtualTextErrorNonCurrentIcon",
+    link = false,
+  })
+  local base = vim.api.nvim_get_hl(0, {
+    name = "TinyInlineDiagnosticVirtualTextError",
+    link = false,
+  })
 
   MiniTest.expect.equality(type(dimmed.fg), "number")
   MiniTest.expect.equality(dimmed.bg, nil)
   MiniTest.expect.equality(dimmed.italic, true)
+  MiniTest.expect.equality(icon.fg, base.fg)
+  MiniTest.expect.equality(icon.bg, nil)
+  MiniTest.expect.equality(icon.italic, nil)
   MiniTest.expect.no_equality(
     dimmed.fg,
     vim.api.nvim_get_hl(0, {

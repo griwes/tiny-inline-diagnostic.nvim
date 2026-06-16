@@ -217,6 +217,16 @@ function M.setup_highlights(blend, default_hi, transparent_bg, highlight_opts)
       end
 
       hi[base_name .. "NonCurrent"] = vim.tbl_deep_extend("force", base, style)
+
+      local icon_style = {
+        fg = colors[name_lower].fg,
+      }
+
+      if non_current.bg ~= nil then
+        icon_style.bg = get_background_color(non_current.bg)
+      end
+
+      hi[base_name .. "NonCurrentIcon"] = vim.tbl_deep_extend("force", base, icon_style)
     end
   end
 
@@ -267,8 +277,11 @@ end
 ---@return string diag_hi
 ---@return string diag_inv_hi
 ---@return string body_hi
+---@return string icon_hi
 function M.get_diagnostic_highlights(blend_factor, diag_ret, curline, index_diag, opts)
   local diag_hi, diag_inv_hi, body_hi = M.get_diagnostic_highlights_from_severity(diag_ret.severity)
+  local severity_name = SEVERITY_NAMES[diag_ret.severity]
+    or SEVERITY_NAMES[DIAGNOSTIC_SEVERITIES.ERROR]
 
   local cursorline_is_visible = is_cursorline_visible()
   local non_current = opts and opts.non_current or {}
@@ -276,6 +289,7 @@ function M.get_diagnostic_highlights(blend_factor, diag_ret, curline, index_diag
   local under_cursor = opts and opts.under_cursor or {}
   local is_current_line = diag_ret.line and diag_ret.line == curline
   local sign_suffix = ""
+  local icon_hi = diag_hi
 
   if
     (diag_ret.line and diag_ret.line == curline)
@@ -302,21 +316,20 @@ function M.get_diagnostic_highlights(blend_factor, diag_ret, curline, index_diag
   end
 
   if diag_ret.under_cursor and under_cursor.enabled then
-    local severity_name = SEVERITY_NAMES[diag_ret.severity]
-      or SEVERITY_NAMES[DIAGNOSTIC_SEVERITIES.ERROR]
     local suffix = current_line.enabled and "CurrentLineUnderCursor" or "UnderCursor"
     diag_hi = HIGHLIGHT_PREFIX .. severity_name .. suffix
+    icon_hi = diag_hi
     diag_inv_hi = INV_HIGHLIGHT_PREFIX .. severity_name .. suffix .. sign_suffix
   elseif is_current_line and current_line.enabled then
-    local severity_name = SEVERITY_NAMES[diag_ret.severity]
-      or SEVERITY_NAMES[DIAGNOSTIC_SEVERITIES.ERROR]
     diag_hi = HIGHLIGHT_PREFIX .. severity_name .. "CurrentLine"
+    icon_hi = diag_hi
     diag_inv_hi = INV_HIGHLIGHT_PREFIX .. severity_name .. "CurrentLine" .. sign_suffix
   elseif diag_ret.line and diag_ret.line ~= curline and non_current.enabled then
     diag_hi = diag_hi .. "NonCurrent"
+    icon_hi = HIGHLIGHT_PREFIX .. severity_name .. "NonCurrentIcon"
   end
 
-  return diag_hi, diag_inv_hi, body_hi
+  return diag_hi, diag_inv_hi, body_hi, icon_hi
 end
 
 ---Get base diagnostic highlight groups from severity
@@ -343,6 +356,15 @@ function M.get_diagnostic_mixed_highlights_from_severity(severity_a, severity_b)
   local hi_b = SEVERITY_NAMES[severity_b] or SEVERITY_NAMES[DIAGNOSTIC_SEVERITIES.ERROR]
 
   return HIGHLIGHT_PREFIX .. hi_b .. "Mix" .. hi_a, INV_HIGHLIGHT_PREFIX .. hi_a .. "Mix" .. hi_b
+end
+
+---Get diagnostic severity icon highlight group
+---@param severity number
+---@param suffix string|nil
+---@return string
+function M.get_diagnostic_icon_highlight_from_severity(severity, suffix)
+  local hi = SEVERITY_NAMES[severity] or SEVERITY_NAMES[DIAGNOSTIC_SEVERITIES.ERROR]
+  return HIGHLIGHT_PREFIX .. hi .. (suffix or "")
 end
 
 ---Get diagnostic icon

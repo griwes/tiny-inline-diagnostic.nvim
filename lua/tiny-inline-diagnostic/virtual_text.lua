@@ -57,7 +57,8 @@ local function build_first_chunk(
     total_chunks,
     chunk_info.severities,
     diag_count,
-    is_related
+    is_related,
+    hl.icon_hi
   )
 
   if index_diag == 1 and not is_related then
@@ -87,7 +88,7 @@ end
 function M.from_diagnostic(opts, ret, index_diag, padding, total_chunks, diag_count)
   local cursor_line = vim.api.nvim_win_get_cursor(0)[1] - 1
 
-  local diag_hi, diag_inv_hi, body_hi = highlights.get_diagnostic_highlights(
+  local diag_hi, diag_inv_hi, body_hi, icon_hi = highlights.get_diagnostic_highlights(
     opts.blend.factor,
     ret,
     cursor_line,
@@ -105,7 +106,7 @@ function M.from_diagnostic(opts, ret, index_diag, padding, total_chunks, diag_co
         opts,
         ret,
         message,
-        { diag_hi = diag_hi, diag_inv_hi = diag_inv_hi },
+        { diag_hi = diag_hi, diag_inv_hi = diag_inv_hi, icon_hi = icon_hi },
         index_diag,
         total_chunks,
         diag_count,

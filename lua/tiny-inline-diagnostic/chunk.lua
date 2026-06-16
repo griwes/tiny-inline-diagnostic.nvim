@@ -4,6 +4,36 @@ local extmarks = require("tiny-inline-diagnostic.extmarks")
 local highlights = require("tiny-inline-diagnostic.highlights")
 local overflow_strategies = require("tiny-inline-diagnostic.overflow_strategies")
 
+---@param severity number
+---@param diag_hi string
+---@param main_severity number
+---@return string
+local function get_severity_icon_highlight(severity, diag_hi, main_severity)
+  if diag_hi:find("NonCurrent$") then
+    return highlights.get_diagnostic_icon_highlight_from_severity(severity, "NonCurrentIcon")
+  end
+
+  return highlights.get_diagnostic_mixed_highlights_from_severity(main_severity, severity)
+end
+
+---@param severities table|nil
+---@param index_diag number
+---@param total_chunks number
+---@return number
+local function get_primary_icon_severity(severities, index_diag, total_chunks)
+  if not severities or #severities == 0 then
+    return vim.diagnostic.severity.ERROR
+  end
+
+  if total_chunks == 1 then
+    local sorted = vim.deepcopy(severities)
+    table.sort(sorted)
+    return sorted[1]
+  end
+
+  return severities[index_diag] or severities[1] or vim.diagnostic.severity.ERROR
+end
+
 --- Calculate the maximum width from a list of chunks.
 ---@param chunks table: A table representing the chunks of a diagnostic message.
 ---@return number: The maximum width among all chunks.
@@ -33,6 +63,7 @@ end
 ---@param severities table: The severities of the diagnostic messages.
 ---@param diag_count number: The number of diagnostics on the line.
 ---@param is_related boolean: Whether this is a related diagnostic.
+---@param icon_hi string|nil: The highlight group for the diagnostic severity icon.
 ---@return table: A table representing the virtual text array for the diagnostic message header.
 function M.get_header_from_chunk(
   message,
@@ -44,10 +75,12 @@ function M.get_header_from_chunk(
   total_chunks,
   severities,
   diag_count,
-  is_related
+  is_related,
+  icon_hi
 )
   local virt_texts = {}
   local num_chunks = #chunk_info.chunks
+  icon_hi = icon_hi or diag_hi
 
   if index_diag == 1 then
     virt_texts = { { opts.signs.left, diag_inv_hi } }
@@ -66,8 +99,13 @@ function M.get_header_from_chunk(
   local icon = M.get_diagnostic_icon(opts, severities, index_diag, total_chunks)
   if is_related then
     icon = "↳ "
+  elseif diag_hi:find("NonCurrent$") then
+    icon_hi = highlights.get_diagnostic_icon_highlight_from_severity(
+      get_primary_icon_severity(severities, index_diag, total_chunks),
+      "NonCurrentIcon"
+    )
   end
-  vim.list_extend(virt_texts, { { icon, diag_hi } })
+  vim.list_extend(virt_texts, { { icon, is_related and diag_hi or icon_hi } })
 
   local cursor_line = vim.api.nvim_win_get_cursor(0)[1] - 1
   local add_messages_opts = opts.options.add_messages
@@ -144,8 +182,7 @@ function M.add_severity_icons(virt_texts, opts, severities, diag_hi)
       end
 
       for i = 1, count - 1 do
-        local hl =
-          highlights.get_diagnostic_mixed_highlights_from_severity(main_severity, main_severity)
+        local hl = get_severity_icon_highlight(main_severity, diag_hi, main_severity)
         local icon = opts.signs.diag
 
         if opts.options.use_icons_from_diagnostic then
@@ -161,7 +198,7 @@ function M.add_severity_icons(virt_texts, opts, severities, diag_hi)
   if show_multiple_glyphs then
     for i = #sorted_severities, 2, -1 do
       local severity = sorted_severities[i]
-      local hl = highlights.get_diagnostic_mixed_highlights_from_severity(main_severity, severity)
+      local hl = get_severity_icon_highlight(severity, diag_hi, main_severity)
       local icon = opts.signs.diag
 
       if opts.options.use_icons_from_diagnostic then
@@ -182,7 +219,7 @@ function M.add_severity_icons(virt_texts, opts, severities, diag_hi)
 
     for i = #unique_severities, 2, -1 do
       local severity = unique_severities[i]
-      local hl = highlights.get_diagnostic_mixed_highlights_from_severity(main_severity, severity)
+      local hl = get_severity_icon_highlight(severity, diag_hi, main_severity)
       local icon = opts.signs.diag
 
       if opts.options.use_icons_from_diagnostic then
@@ -204,13 +241,9 @@ function M.get_diagnostic_icon(opts, severities, index_diag, total_chunks)
   local icon = opts.signs.diag
 
   if opts.options.use_icons_from_diagnostic then
-    if total_chunks == 1 then
-      local sorted = vim.deepcopy(severities)
-      table.sort(sorted)
-      icon = highlights.get_diagnostic_icon(sorted[1])
-    else
-      icon = highlights.get_diagnostic_icon(severities[index_diag])
-    end
+    icon = highlights.get_diagnostic_icon(
+      get_primary_icon_severity(severities, index_diag, total_chunks)
+    )
   end
 
   return icon

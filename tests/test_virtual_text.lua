@@ -97,6 +97,92 @@ T["from_diagnostic"]["handles multiple diagnostics"] = function()
   end)
 end
 
+T["from_diagnostic"]["keeps non-current diagnostic icon severity-colored"] = function()
+  H.with_win_buf({ "cursor line", "diagnostic line" }, { 1, 0 }, nil, function(buf, win)
+    local opts = H.make_opts({
+      options = {
+        use_icons_from_diagnostic = false,
+        highlights = {
+          non_current = {
+            enabled = true,
+            bg = "None",
+          },
+        },
+      },
+    })
+    local chunk_info = {
+      chunks = { " diagnostic message" },
+      severity = vim.diagnostic.severity.ERROR,
+      severities = { vim.diagnostic.severity.ERROR },
+      line = 1,
+      need_to_be_under = false,
+      offset_win_col = 0,
+    }
+
+    local virt_texts = virtual_text.from_diagnostic(opts, chunk_info, 1, 20, 1, 1)
+    local header = virt_texts[1]
+
+    MiniTest.expect.equality(header[3], { " ", "TinyInlineDiagnosticVirtualTextErrorNonCurrent" })
+    MiniTest.expect.equality(
+      header[4],
+      { "●", "TinyInlineDiagnosticVirtualTextErrorNonCurrentIcon" }
+    )
+    MiniTest.expect.equality(
+      header[5],
+      { "  diagnostic message  ", "TinyInlineDiagnosticVirtualTextErrorNonCurrent" }
+    )
+  end)
+end
+
+T["from_diagnostic"]["keeps grouped non-current primary icon on max severity"] = function()
+  H.with_win_buf({ "cursor line", "diagnostic line" }, { 1, 0 }, nil, function(buf, win)
+    local opts = H.make_opts({
+      options = {
+        use_icons_from_diagnostic = false,
+        add_messages = {
+          messages = true,
+          show_multiple_glyphs = true,
+          use_max_severity = false,
+        },
+        highlights = {
+          non_current = {
+            enabled = true,
+            bg = "None",
+          },
+        },
+      },
+    })
+    local chunk_info = {
+      chunks = { " diagnostic message" },
+      severity = vim.diagnostic.severity.WARN,
+      severities = {
+        vim.diagnostic.severity.ERROR,
+        vim.diagnostic.severity.WARN,
+        vim.diagnostic.severity.INFO,
+      },
+      line = 1,
+      need_to_be_under = false,
+      offset_win_col = 0,
+    }
+
+    local virt_texts = virtual_text.from_diagnostic(opts, chunk_info, 1, 20, 1, 3)
+    local header = virt_texts[1]
+
+    MiniTest.expect.equality(
+      header[4],
+      { "●", "TinyInlineDiagnosticVirtualTextInfoNonCurrentIcon" }
+    )
+    MiniTest.expect.equality(
+      header[5],
+      { "●", "TinyInlineDiagnosticVirtualTextWarnNonCurrentIcon" }
+    )
+    MiniTest.expect.equality(
+      header[6],
+      { "●", "TinyInlineDiagnosticVirtualTextErrorNonCurrentIcon" }
+    )
+  end)
+end
+
 T["from_diagnostics"] = MiniTest.new_set()
 
 T["from_diagnostics"]["returns virtual text for multiple diagnostics"] = function()
